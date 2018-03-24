@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="jp">
+
+<head>
+  <meta charset="utf-8">
+  <title>カップリングジェネレータ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css">
+  <style>
+    .button-active,
+    .button-active:focus {
+      color: #FFF;
+      background-color: #33F0C3;
+      border-color: #33F0C3;
+    }
+
+    .button-active:hover {
+      color: #FFF;
+      background-color: #1eb390;
+      border-color: #1eb390;
+    }
+
+    #coupling {
+      margin-top: 5%;
+      margin-bottom: 5%;
+    }
+
+    #coupling {
+      text-align: center;
+      font-size: 2.7em;
+    }
+
+    [v-cloak] {
+      visibility: hidden;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app">
+    <div class="container">
+      <div class="row">
+        <div class="column" style="margin-top: 5%">
+          <small v-cloak>{{ subTitle }}</small>
+          <h4>カップリングジェネレータ</h4>
+
+          <div id="coupling" class="row">
+            <div class="five columns">
+              <label id="dog" v-cloak>{{ dog }}</label>
+            </div>
+            <div class="two columns">
+              <label id="operator">✕</label>
+            </div>
+            <div class="five columns">
+              <label id="cat" v-cloak>{{ cat }}</label>
+            </div>
+          </div>
+          <button id="character-submit" class="button-primary u-full-width" @click="createCoupling">カップリングを作る</button>
+          <span id="message" class="u-full-width">{{ message }}</span>
+          <div id="character-table">
+            <table class="u-full-width">
+              <thead>
+                <tr>
+                  <th>name</th>
+                  <th>allow</th>
+                  <th>dog</th>
+                  <th>cat</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="row" v-for="c of characterList">
+                  <td>{{ c.name }}</td>
+                  <td>
+                    <button v-bind:class="{ 'button-active': c.allow }" @click="prop(c, 'allow')"></button>
+                  </td>
+                  <td>
+                    <button v-bind:class="{ 'button-active': c.dog }" @click="prop(c, 'dog')"></button>
+                  </td>
+                  <td>
+                    <button v-bind:class="{ 'button-active': c.cat }" @click="prop(c, 'cat')"></button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div id="character-input">
+            <div class="ten columns">
+              <input id="character-input" class="u-full-width" placeholder="AAA, BBB, CCC" type="text" v-model="characterStr">
+            </div>
+            <div class="two columns">
+              <button id="character-submit" class="button-primary" @click="updateParameter">update</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.5.16/vue.min.js"></script>
+  <script>
+    var characterList = []
+    var excludeCouplingList = []
+
+    var vm = new Vue({
+      el: '#app',
+      data: {
+        isHidden: true,
+        dog: '',
+        cat: '',
+        message: '',
+        subTitle: 'わたモテ版',
+        characterStr: '黒木智子,田村ゆり,根元陽菜,内笑美莉',
+        characterList: [],
+        excludeCouplingList: []
+      },
+      mounted: function () {
+        var param = {};
+        location.search.substring(1).split('&').forEach(function (v, i) {
+          var tmp = decodeURI(v).split('=')
+          param[tmp[0]] = tmp[1]
+        })
+        if (param.subTitle) {
+          this.subTitle = param.subTitle
+        }
+        if (param.characterStr) {
+          this.characterStr = param.characterStr
+        }
+        this.createCharacterList()
+        this.isHidden = false;
+      },
+      methods: {
+        prop: function (e, t) {
+          e[t] = !e[t]
+        },
+        createCoupling: function () {
+          this.message = '';
+          var dogList = this.characterList
+            .filter((v, i) => { return v.allow && v.dog })
+            .map((v, i) => { return v.name })
+          var catList = this.characterList
+            .filter((v, i) => { return v.allow && v.cat })
+            .map((v, i) => { return v.name })
+          if (dogList.length === 0) {
+            return this.reset('allow、dog、catにチェックの入ったキャラは最低二人以上必要です。')
+          }
+          this.dog = dogList[Math.floor(Math.random() * dogList.length)]
+          if (catList.indexOf(this.dog) > -1) {
+            catList.splice(catList.indexOf(this.dog), 1)
+          }
+          if (catList.length === 0) {
+            return this.reset('allow、dog、catにチェックの入ったキャラは最低二人以上必要です。')
+          }
+          this.cat = catList[Math.floor(Math.random() * catList.length)]
+        },
+        reset: function (mes) {
+          this.dog = ''
+          this.cat = ''
+          this.message = mes
+        },
+        updateParameter: function () {
+          location.href = location.href.replace(/\?.*$/, "")
+            + '?subTitle=' + this.subTitle
+            + '&characterStr=' + this.characterStr
+        },
+        createCharacterList: function () {
+          if (!this.characterStr) {
+            return
+          }
+          var self = this
+          self.characterList = []
+          self.characterStr.split(',').forEach(function (v, i) {
+            self.characterList.push({
+              name: v.trim(), allow: true, dog: true, cat: true
+            })
+          })
+        }
+      }
+    })
+  </script>
+</body>
+
+</html>
